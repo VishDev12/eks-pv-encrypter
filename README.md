@@ -9,10 +9,10 @@ unencrypted EBS Volumes and encrypt them.
 
 If you:
 
-➡️ Have an EKS Cluster.
-➡️ Use Persistent Volumes backed by EBS Volumes.
-➡️ Want to make sure all the EBS Volumes you use are encrypted.
-➡️ Don't want to do it one-by-one.
+➡️ Have an EKS Cluster.  
+➡️ Use Persistent Volumes backed by EBS Volumes.  
+➡️ Want to make sure all the EBS Volumes you use are encrypted.  
+➡️ Don't want to do it one-by-one.  
 
 Then this tool will help you speed up this process.
 
