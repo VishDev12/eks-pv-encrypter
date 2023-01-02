@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "eks-pv-encrypter"
+version = "0.1.0"
+description = "A simple tool to encrypt the EBS volumes linked to your EKS Persistent Volumes."
+authors = ["Vishnu Deva <vishnu.d@madstreetden.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~3.9"
+
+# Core Dependencies
+kubernetes = "^25.3.0"
+boto3 = "^1.26.41"
+rich = "^13.0.0"
+black = {extras = ["jupyter"], version = "^22.12.0"}
+ipykernel = "^6.19.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
