@@ -26,7 +26,7 @@ constructive/destructive actions.
 
 ## Installation
 
-Hosted on [PyPi](https://pypi.org/project/eks-pv-encrypter/).
+Hosted on [PyPI](https://pypi.org/project/eks-pv-encrypter/).
 
 `pip install eks-pv-encrypter`
 
@@ -37,4 +37,4 @@ Hosted on [PyPi](https://pypi.org/project/eks-pv-encrypter/).
 
 ## Overview of the Process
 
-![Overview](ebs-pv-encrypter.jpg)
+![Overview](https://raw.githubusercontent.com/VishDev12/eks-pv-encrypter/main/ebs-pv-encrypter.jpg)
