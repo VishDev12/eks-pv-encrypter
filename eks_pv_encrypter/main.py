@@ -1,3 +1,7 @@
+"""Common functions.
+"""
+
+import traceback
 import contextlib
 from rich.table import Table
 from rich.console import Console
@@ -6,9 +10,14 @@ from kubernetes.client.models.v1_pod import V1Pod
 from kubernetes.client.models.v1_pod_list import V1PodList
 from kubernetes.client.models.v1_persistent_volume import V1PersistentVolume
 
-from logger import logger
-from k8s_utils import get_owner_details
-from aws_utils import get_ebs_encryption_status, get_snapshot_details
+from eks_pv_encrypter.logger import logger
+from eks_pv_encrypter.aws_utils import get_ebs_details, get_snapshot_details
+from eks_pv_encrypter.k8s_utils import (
+    get_owner_details,
+    get_pv_list,
+    get_pod_list,
+    get_ebs_backed_pvs,
+)
 
 console = Console()
 
@@ -55,7 +64,7 @@ def get_unencrypted_ebs_pvs(
         try:
             # Retrieve the details of the linked volume.
             volume_id = get_volume_id_short(pv.spec.aws_elastic_block_store.volume_id)
-            volume_details = get_ebs_encryption_status(volume_id=volume_id)
+            volume_details = get_ebs_details(volume_id=volume_id)
 
             # Check whether it's encrypted.
             if volume_details["Encrypted"]:
@@ -73,9 +82,10 @@ def get_unencrypted_ebs_pvs(
             logger.error(
                 f"Affected PVC: {pv.spec.claim_ref.name} in {pv.spec.claim_ref.namespace}"
             )
+            logger.error(e)
 
     logger.info(f"Count of encrypted EBS PVs: {enc_count}")
-    logger.info(f"Count of unencrypted EBS PVs: {unenc_pv_list}")
+    logger.info(f"Count of unencrypted EBS PVs: {len(unenc_pv_list)}")
 
     return unenc_pv_list
 
@@ -119,6 +129,9 @@ def filter_pods_with_pv(
 
         pod: V1Pod
         assert pod.spec
+
+        if not pod.spec.volumes:
+            continue
 
         for volume in pod.spec.volumes:
             # Value is None if not present.
@@ -324,3 +337,24 @@ def get_snapshot_list_progress(snapshot_id_ls: List[str]) -> Dict[str, Any]:
         "state_list": state_list,
         "avg_progress": sum(progress_list) / len(progress_list),
     }
+
+
+def collect_info():
+    # Get the list of all Persistent Volumes in the Cluster.
+    pv_list = get_pv_list()
+
+    # Get all PVs that are backed by EBS Volumes.
+    ebs_pv_list = get_ebs_backed_pvs(pv_list)
+
+    # Find the PVs with unencrypted EBS Volumes.
+    # NOTE: This is the main list we use for the rest of the notebook.
+    # So the order of the `unenc_pv_list` will be maintained and used in enc_snapshot_id_ls
+    # and volume_id_ls.
+    unenc_pv_list = get_unencrypted_ebs_pvs(ebs_pv_list)
+
+    # Get the list of all Pods.
+    pod_list = get_pod_list()
+
+    # Get all the owners of the pods that are linked to one of the PVs from `unenc_pv_list`
+    # through a PVC.
+    valid_owners = get_owners(pod_list, unenc_pv_list)

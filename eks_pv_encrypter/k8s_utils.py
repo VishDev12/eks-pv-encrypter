@@ -1,3 +1,6 @@
+"""Functions that interact directly with the Kubernetes Client.
+"""
+
 import traceback
 from kubernetes import client, config
 from typing import Dict, List, Union, Any
@@ -7,7 +10,7 @@ from kubernetes.client.models.v1_persistent_volume import V1PersistentVolume
 from kubernetes.client.models.v1_persistent_volume_list import V1PersistentVolumeList
 from kubernetes.client.models.v1_persistent_volume_claim import V1PersistentVolumeClaim
 
-from logger import logger
+from eks_pv_encrypter.logger import logger
 
 config.load_kube_config()
 
@@ -31,14 +34,14 @@ def get_pv_list() -> V1PersistentVolumeList:
 
 
 def get_pod_list() -> V1PodList:
-    """Get a list of all pods in the K8s cluster.
+    """Get a list of all (only) running pods in the K8s cluster.
 
     Returns
     -------
     V1PodList
         List of all pods in the cluster.
     """
-    pod_list = v1.list_pod_for_all_namespaces()
+    pod_list = v1.list_pod_for_all_namespaces(field_selector="status.phase=Running")
 
     logger.info(f"Count of Pods: {len(pod_list.items)}")
 
@@ -128,7 +131,7 @@ def get_owner_details(pod: V1Pod) -> Dict[str, str]:
     }
 
 
-def scale_deployment(name: str, namespace: str, replicas: int):
+def scale_deployment(name: str, namespace: str, replicas: int) -> Dict[str, Any]:
     """Given the name of a deployment, scale it to the specified number of replicas.
 
     Parameters
@@ -142,7 +145,7 @@ def scale_deployment(name: str, namespace: str, replicas: int):
 
     Returns
     -------
-    Any
+    Dict[str, Any]
         Response after the patching operation.
     """
     return apps_v1.patch_namespaced_deployment_scale(
@@ -154,7 +157,7 @@ def scale_deployment(name: str, namespace: str, replicas: int):
     )
 
 
-def scale_stateful_set(name: str, namespace: str, replicas: int):
+def scale_stateful_set(name: str, namespace: str, replicas: int) -> Dict[str, Any]:
     """Given the name of a StatefulSet, scale it to the specified number of replicas.
 
     Parameters
@@ -162,7 +165,14 @@ def scale_stateful_set(name: str, namespace: str, replicas: int):
     name : string
         The name of the StatefulSet.
     namespace : string
-        The names
+        The namespace of the StatefulSet.
+    replicas : int
+        The number of replicas to which the StatefulSet should be scaled.
+
+    Response
+    --------
+    Dict[str, Any]
+        The response of the request to `patch_namespaced_stateful_set_scale`.
     """
     return apps_v1.patch_namespaced_stateful_set_scale(
         name=name,
@@ -175,10 +185,21 @@ def scale_stateful_set(name: str, namespace: str, replicas: int):
     )
 
 
-def clean_pv_pvc_dict(
-    obj: Union[V1PersistentVolume, V1PersistentVolumeClaim], type: str
-):
-    """Delete unnecessary fields from the PV manifest."""
+def clean_pv_pvc(obj: Union[V1PersistentVolume, V1PersistentVolumeClaim], type: str):
+    """Delete unnecessary fields from the PV manifest.
+
+    Parameters
+    ----------
+    obj : V1PersistentVolume or V1PersistentVolumeClaim
+        The PV/PVC object that needs to be stripped of unnecessary fields.
+    type : string
+        The object type. Either "pv" or "pvc".
+
+    Returns
+    -------
+    V1PersistentVolume or V1PersistentVolumeClaim
+        The cleaned object that was input.
+    """
 
     obj.metadata.annotations = None
     obj.metadata.creation_timestamp = None
@@ -206,6 +227,11 @@ def get_pvc(claim_ref_name: str, claim_ref_namespace: str) -> Any:
         The name of the claim reference.
     claim_ref_namespace : string
         The namespace of the claim reference.
+
+    Returns
+    -------
+    V1PersistentVolumeClaim
+        The PVC object.
     """
 
     # Find the PVC linked to the PV.
@@ -223,7 +249,12 @@ def pv_exists(name: str, fail_fast: bool = False):
     name : str
         The name of the PV.
     fail_fast : bool
-        Throw an exception if the PV doesn't exist or has an issue.
+        If True, throw an exception if the PV doesn't exist or has an issue.
+
+    Returns
+    -------
+    boolean
+        True if the PV exists else False.
     """
     try:
         pv_response = v1.read_persistent_volume(name=name)
@@ -251,7 +282,12 @@ def pvc_exists(name: str, namespace: str, fail_fast: bool = False):
     namespace : str
         The namespace of the PVC.
     fail_fast : bool
-        Throw an exception if the PV doesn't exist or has an issue.
+        If True, throw an exception if the PVC doesn't exist or has an issue.
+
+    Returns
+    -------
+    boolean
+        True if the PVC exists else False.
     """
     try:
         pvc_response = v1.read_namespaced_persistent_volume_claim(

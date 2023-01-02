@@ -1,18 +1,21 @@
+"""Functions that interact directly with the boto3 EC2 client.
+"""
+
 import os
 import boto3
 import traceback
 import botocore.exceptions
 from typing import Dict, List, Any, Union
 
-from logger import logger
+from eks_pv_encrypter.logger import logger
 
 # A client to interact with EC2 resources in the AWS region specified by the AWs_REGION
 # environment variable.
 ec2_client = boto3.client("ec2", region_name=os.environ["AWS_REGION"])
 
 
-def get_ebs_encryption_status(volume_id: str) -> Dict[str, Any]:
-    """Given an EBS volume ID, check its encryption status.
+def get_ebs_details(volume_id: str) -> Dict[str, Any]:
+    """Given an EBS volume ID, return its details.
 
     Parameters
     ----------
