@@ -26,7 +26,9 @@ constructive/destructive actions.
 
 ## Installation
 
-`pip install .`
+Hosted on [PyPi](https://pypi.org/project/eks-pv-encrypter/).
+
+`pip install eks-pv-encrypter`
 
 ## Usage
 
