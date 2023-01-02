@@ -19,10 +19,20 @@ Then this tool will help you speed up this process.
 ## What does it contain?
 
 * A Jupyter Notebook which is the main interface.
-* A simple CLI that displays relevant information about your cluster.
+* A simple CLI that displays relevant information about your cluster. (**)
 
 The CLI will be limited to read-only actions. The Notebook is the only way to execute
 constructive/destructive actions.
+
+## Please Note
+
+This repository is mainly for reference.
+
+Review every piece of code before you execute it. This is the reason why the primary
+interface is a notebook and not a CLI. The primary purpose of this repository is to be
+a reference, not a ready-to-use-in-production tool.
+
+Please don't risk your data.
 
 ## Installation
 
